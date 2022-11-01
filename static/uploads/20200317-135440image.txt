@@ -1,0 +1,24 @@
+from werkzeug.utils import secure_filename
+import os
+import time
+
+
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/uploads')
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+
+
+    if picture and allowed_file(picture.filename):
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        filename = timestr+secure_filename(picture.filename)
+        picture.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))

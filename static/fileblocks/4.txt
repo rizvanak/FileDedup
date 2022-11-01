@@ -1,0 +1,48 @@
+e, Email, Contact,house_name,post,place,district,date_of_birth, Gender, Department,Image) VALUES ('"+name+"','"+email+"','"+contact+"','"+house_name+"','"+post+"','"+place+"','"+district+"','"+dob+"','"+gender+"','"+department+"','"+path+"')"
+        c.nonreturn(s)
+        l="insert into login(username,usertype,password) VALUES ('"+email+"','employee','"+str(pswd)+"')"
+        c=conn()
+        c.nonreturn(l)
+        import smtplib
+
+        s = smtplib.SMTP(host='smtp.gmail.com', port=587)
+        s.starttls()
+        s.login("attributebasedencryption@gmail.com", "attribute123")
+        msg = MIMEMultipart()  # create a message.........."
+        message = "Messege from CP-ABE"
+        msg['From'] = "attributebasedencryption@gmail.com"
+        msg['To'] = email
+        msg['Subject'] = "Your Password for CP-ABE Website"
+        body = "Your Password is:- - " + str(pswd)
+        msg.attach(MIMEText(body, 'plain'))
+        s.send_message(msg)
+        return home()
+@app.route('/view_emp')
+def view_emp():
+    v = "select * from employee"
+    c = conn()
+    v1 = c.selectall(v)
+    return render_template("ad_view_emp.html", data=v1)
+@app.route('/edit_emp/<sid>')
+def edit_emp(sid):
+    u = "select *from employee where Employee_id='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_edit_emp.html", data=u1)
+@app.route('/update_emp',methods=["post"])
+def update_emp():
+    employee_id=request.form["eid"]
+    name=request.form["txt_name"]
+    email=request.form["txt_email"]
+    contact=request.form["txt_contact"]
+    house_name = request.form["txt_hname"]
+    post = request.form["txt_post"]
+    place = request.form["txt_place"]
+    district = request.form["sl_district"]
+    dob=request.form["txt_dob"]
+    gender=request.form["rd_gender"]
+    department=request.form["txt_department"]
+    image = request.files["fl_image"]
+    pswd = random.randint(00000000, 99999999)
+    dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+    ima

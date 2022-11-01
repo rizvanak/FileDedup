@@ -1,0 +1,65 @@
+r_template("emp_view_rule.html", data=v1)
+
+
+@app.route('/delete_rul/<sid>')
+def delete_rul(sid):
+    u="delete from file_rule where rule_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return add_attribute()
+
+
+
+
+
+@app.route('/')
+def login():
+    return render_template("login.html")
+@app.route('/logins',methods=["post"])
+def logins():
+    username=request.form["txt_usrname"]
+    password=request.form["txt_password"]
+    u="select * from login where Username='"+username+"' and Password='"+password+"'"
+    c = conn()
+    v1 = c.selectone(u)
+    if v1 is None:
+        return ("<script>alert('YOU ARE NOT REGISTERED!')window.location='/'</script>")
+    else:
+        if v1[2]=="admin":
+            return render_template("ad_home.html")
+        else:
+            v="select * from employee where Email='"+username+"'"
+            c=conn()
+            u1=c.selectone(v)
+            session['emp_id']=u1[0]
+            return render_template("emp_home.html")
+@app.route('/emp_home')
+def ehome():
+    return render_template("emp_home.html")
+@app.route('/emp_fileupload')
+def emp_fileupload():
+    return render_template("emp_fileupload.html")
+@app.route('/emp_fileuploads',methods=["post"])
+def emp_fileuploads():
+    file=request.files["fl_file2"]
+    filename=request.form["txt_filename2"]
+    kk = file.filename
+    ko = kk.split(".")
+
+
+    dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+    file.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_files\\"+ dt +"."+ko[1])
+    session["filepath"] = "C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_files\\" + dt + "." + ko[1]
+    path="/static/emp_file/" + dt + "."+ko[1]
+
+    w = "select max(File_id) from tbl_files"
+    c = conn()
+    d = c.mid(w)
+    session['File_id'] = d
+
+    s="insert into tbl_files(File_name,Filepath,user_id,File_id) VALUES ('"+filename+"','"+path+"','"+str(session['emp_id'])+"','"+str(d)+"')"
+    c = conn()
+    c.nonreturn(s)
+
+    return add_attribute()
+@app.ro

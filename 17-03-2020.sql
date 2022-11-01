@@ -1,0 +1,1 @@
+select block_id from indexes where file_id in(select file_id from fileupload where u_id = 1)

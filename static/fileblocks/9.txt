@@ -1,0 +1,44 @@
+
+                        mfinalfin.append(w + "A" + x)
+
+            # print("mfinalfin", mfinalfin)
+            count = 0
+            for j in range(len(mfinal)):
+                for k in range(len(mfinalfin)):
+                    if mfinal[j] == mfinalfin[k]:
+                        count = count + 1
+            ko = list(dict.fromkeys(ko))
+            # print(ko)
+            for j in range(len(ko)):
+                for k in range(len(myattr1)):
+                    if int(ko[j]) == myattr1[k]:
+                        count = count + 1
+
+            if count > 0:
+                fid.append(i[0])
+                fname.append(i[1])
+                desc.append(i[2])
+        return render_template("emp_view_uploads.html", data=res, cnt=len(fid), fid=fid, fname=fname, path=desc)
+    else:
+        return render_template("emp_view_uploads.html",data=res,cnt=0)
+@app.route('/add_accs',methods=["post"])
+def addaccess():
+    but=request.form["bt_save"]
+    if but == "SAVE":
+        attribute1=request.form["sl_attr1"]
+        operator=request.form["sl_condition"]
+        attribute2=request.form["sl_attr2"]
+        rule=str(attribute1)+" "+str(operator)+" "+str(attribute2)
+        f=session['File_id']
+        s="insert into file_rule(rule,file_id,attribute1,operator,attribute2) VALUES ('"+rule+"','"+str(f)+"','"+attribute1+"','"+operator+"','"+attribute2+"')"
+        c = conn()
+        c.nonreturn(s)
+        u = "select Attribute_id,Attribute_name from attribute"
+        v = "select Attribute_id,Attribute_name from attribute"
+
+        c = conn()
+        ul = c.selectall(u)
+        print(ul)
+        vl = c.selectall(v)
+        print(vl)
+        v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and tbl_files.File_id='" + str(

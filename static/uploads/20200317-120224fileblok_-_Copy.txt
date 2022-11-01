@@ -1,0 +1,77 @@
+import base64
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+from flask import Flask,render_template,request,session,send_file
+from connection import conn
+import pyAesCrypt
+import datetime
+
+import random
+import os
+bufferSize = 64 * 1024
+app = Flask(__name__)
+app.secret_key="abc"
+
+@app.route('/home')
+def home():
+    return render_template("ad_home.html")
+@app.route('/atbr_mngmnt')
+def atbr_mngmnt():
+    return render_template("ad_add_attribute.html")
+@app.route('/atbrmg',methods=["post"])
+def atbrmg():
+    attribute=request.form["txt_attribute"]
+    s="insert into attribute (Attribute_name) VALUES ('"+attribute+"')"
+    c=conn()
+    c.nonreturn(s)
+    return home()
+@app.route('/view_attr')
+def view():
+    v ="select * from attribute"
+    c =conn()
+    v1 = c.selectall(v)
+    return render_template("ad_view_attribute.html",data=v1)
+
+@app.route('/edit_attr/<sid>')
+def edit_attr(sid):
+    u = "select *from attribute where Attribute_id='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_edit_attribute.html", data=u1)
+@app.route('/update_attr',methods=["post"])
+def update():
+    attribute_id=request.form["aid"]
+    attribute_name=request.form["txt_attribute"]
+    u="update attribute set Attribute_name='"+attribute_name+"' where Attribute_id='"+attribute_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view()
+@app.route('/delete_attr/<sid>')
+def delete_attr(sid):
+    u="delete from attribute where Attribute_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view()
+@app.route('/view_complaint')
+def view_complaint():
+    v="select complaint.Complaint_id,employee.Name,complaint.Complaint,employee.Image,complaint.C_date from complaint inner join employee on employee.Employee_id=complaint.Employee_id where complaint.Status='pending'"
+    print(v)
+    c = conn()
+    v1 = c.selectall(v)
+    print(v1)
+    return render_template("ad_complaint.html", data=v1)
+@app.route('/reply_cmp/<sid>')
+def reply_cmp(sid):
+    u = "select * from complaint where Complaint_id ='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_reply.html.", data=u1)
+@app.route('/update_reply',methods=["post"])
+def update_reply():
+    complaint_id=request.form["rid"]
+    reply=request.form["txtarea_reply"]
+    u="update complaint set Reply='"+reply+"',status='done' where Complaint_id='"+complaint_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_complaint()

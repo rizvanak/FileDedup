@@ -1,0 +1,51 @@
+ge.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_img\\" + dt + ".jpg")
+    path = "/static/emp_img/" + dt + ".jpg"
+    u="update employee set Name ='"+name+"',Email='"+email+"',Contact='"+contact+"',house_name='"+house_name+"',post='"+post+"',place='"+place+"',district='"+district+"',date_of_birth='"+dob+"',Gender='"+gender+"',Department='"+department+"',Image='"+path+"'where Employee_id='"+employee_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_emp()
+@app.route('/delete_emp/<sid>')
+def delete_emp(sid):
+    u="delete from employee where Employee_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_emp()
+@app.route('/file_upload')
+def file_upload():
+    return render_template("ad_fileupload.html")
+
+@app.route('/file_uploads',methods=["post"])
+def file_uploads():
+    file=request.files["fl_file"]
+    filename=request.form["txt_filename"]
+    kk=file.filename
+    ko=kk.split(".")
+    dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+    file.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + "."+ko[1])
+    session["filepath"]="C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + "."+ko[1]
+    path="/static/files/" + dt + "."+ko[1]
+    w="select max(File_id) from tbl_files"
+    c=conn()
+    d=c.mid(w)
+    session['File_id']=d
+    s="insert into tbl_files(File_name,Filepath,user_id,File_id) VALUES ('"+filename+"','"+path+"','0','"+str(d)+"')"
+    c = conn()
+    c.nonreturn(s)
+    return add_access()
+# @app.route('/file_uploads',methods=["post"])
+# def file_uploads():
+#     file=request.files["fl_file"]
+#     filename=request.form["txt_filename"]
+#
+#
+#
+#
+#     dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+#     file.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt")
+#
+#     path="/static/files/" + dt + ".jpg"
+#     import pyaes
+#
+#     # A 256 bit (32 byte) key
+#     key = "This_key_for_demo_purposes_only!"
+#    

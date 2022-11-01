@@ -1,0 +1,56 @@
+session["File_id"]) + "'"
+        c = conn()
+        v2 = c.selectall(v)
+        return render_template("ad_add_accessrule.html", att1=ul, att2=vl, data=v2)
+    else:
+        c = conn()
+
+        filepath = str(session["filepath"])
+        fid = str(session["File_id"])
+        s = "select * from file_rule where file_id='" + fid + "'"
+        ff = c.selectall(s)
+        mystring = ""
+        if ff is not None:
+            for i in ff:
+                k1 = str(i[1])
+                k2 = k1.split(" ")
+                if k2[1] == "AND":
+                    k3 = "A"
+                else:
+                    k3 = "O"
+                if mystring != "":
+                    mystring = mystring + k2[0] + k3 + k2[2] + "A"
+                else:
+                    mystring = k2[0] + k3 + k2[2] + "A"
+        print("mystring", mystring)
+
+        import hashlib
+
+        hash_object = hashlib.md5(mystring.encode())
+        k = hash_object.hexdigest()
+        print(k)
+        qry = "update tbl_files set key_hash='" + str(k) + "' where File_id='" + str(session["File_id"]) + "'"
+        print(qry)
+        c = conn()
+        c.nonreturn(qry)
+        pyAesCrypt.encryptFile(filepath, filepath + ".aes", k, bufferSize)
+        with open(filepath + ".aes", "rb")as image:
+
+            f = image.read()
+            b = bytearray(f)
+        c = conn()
+        blocksize = 10000
+        totalblocks = int(len(b) / blocksize)
+        for n in range(0, totalblocks):
+            blocksingle = bytearray([b[i] for i in range(n * blocksize, (n * blocksize) + blocksize)])
+            result = hashlib.sha256(blocksingle)
+            hashval = result.hexdigest()
+            qry = "select block_id from blocks where hash_value='" + hashval + "'"
+            rf = c.selectone(qry)
+            blckid = ""
+            if rf is not None:
+                blckid = str(rf[0])
+            else:
+                sq = "select max(block_id) from blocks"
+                blckid = str(c.mid(sq))
+                qry = "INSERT INTO blo

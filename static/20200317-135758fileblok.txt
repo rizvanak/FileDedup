@@ -1,0 +1,849 @@
+import base64
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+from flask import Flask,render_template,request,session,send_file
+from connection import conn
+import pyAesCrypt
+import datetime
+
+import random
+import os
+bufferSize = 64 * 1024
+app = Flask(__name__)
+app.secret_key="abc"
+
+@app.route('/home')
+def home():
+    return render_template("ad_home.html")
+@app.route('/atbr_mngmnt')
+def atbr_mngmnt():
+    return render_template("ad_add_attribute.html")
+@app.route('/atbrmg',methods=["post"])
+def atbrmg():
+    attribute=request.form["txt_attribute"]
+    s="insert into attribute (Attribute_name) VALUES ('"+attribute+"')"
+    c=conn()
+    c.nonreturn(s)
+    return home()
+@app.route('/view_attr')
+def view():
+    v ="select * from attribute"
+    c =conn()
+    v1 = c.selectall(v)
+    return render_template("ad_view_attribute.html",data=v1)
+
+@app.route('/edit_attr/<sid>')
+def edit_attr(sid):
+    u = "select *from attribute where Attribute_id='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_edit_attribute.html", data=u1)
+@app.route('/update_attr',methods=["post"])
+def update():
+    attribute_id=request.form["aid"]
+    attribute_name=request.form["txt_attribute"]
+    u="update attribute set Attribute_name='"+attribute_name+"' where Attribute_id='"+attribute_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view()
+@app.route('/delete_attr/<sid>')
+def delete_attr(sid):
+    u="delete from attribute where Attribute_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view()
+@app.route('/view_complaint')
+def view_complaint():
+    v="select complaint.Complaint_id,employee.Name,complaint.Complaint,employee.Image,complaint.C_date from complaint inner join employee on employee.Employee_id=complaint.Employee_id where complaint.Status='pending'"
+    print(v)
+    c = conn()
+    v1 = c.selectall(v)
+    print(v1)
+    return render_template("ad_complaint.html", data=v1)
+@app.route('/reply_cmp/<sid>')
+def reply_cmp(sid):
+    u = "select * from complaint where Complaint_id ='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_reply.html.", data=u1)
+@app.route('/update_reply',methods=["post"])
+def update_reply():
+    complaint_id=request.form["rid"]
+    reply=request.form["txtarea_reply"]
+    u="update complaint set Reply='"+reply+"',status='done' where Complaint_id='"+complaint_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_complaint()
+
+
+@app.route('/EA_remove')
+def EA_remove():
+    return render_template("ad_EA remove.html")
+@app.route('/view_EA')
+def view_EA():
+    v="select employee_attribute.Assign_id,employee.Name,attribute.Attribute_name from employee_attribute inner join employee on employee.Employee_id=employee_attribute.Employee_id inner join attribute on attribute.Attribute_id=employee_attribute.Attribute_id"
+    c = conn()
+    v1 = c.selectall(v)
+    return render_template("ad_EA remove.html", data=v1)
+@app.route('/delete_EA/<sid>')
+def del_EA(sid):
+    u = "delete from employee_attribute where Assign_id='" + sid + "'"
+    c = conn()
+    ul = c.nonreturn(u)
+    return view_EA()
+
+
+
+@app.route('/EA_assign')
+def EA_assign():
+    u = "select Employee_id,Name from employee"
+    v = "select Attribute_id,Attribute_name from attribute"
+
+    c = conn()
+    ul = c.selectall(u)
+    print(ul)
+    vl = c.selectall(v)
+    print(vl)
+    return render_template("ad_EAassign.html",emp=ul,att=vl)
+@app.route('/EA_assigns',methods=["post"])
+def EA_assigns():
+    bt=request.form['button']
+    if bt =="Save":
+        employee_name=request.form["sl_empname"]
+        attribute_name=request.form["sl_attributename"]
+
+        d="select * from employee_attribute WHERE Employee_id='"+employee_name+"' AND Attribute_id='"+attribute_name+"'"
+        c=conn()
+        v=c.selectone(d)
+        if v is not None:
+            return EA_assign()
+
+        else:
+            s="insert into employee_attribute(Employee_id,Attribute_id) VALUES ('"+employee_name+"','"+attribute_name+"')"
+            c = conn()
+            c.nonreturn(s)
+            return home()
+    else:
+        u = "select Employee_id,Name from employee"
+        v = "select Attribute_id,Attribute_name from attribute"
+
+        c = conn()
+        ul = c.selectall(u)
+        print(ul)
+        vl = c.selectall(v)
+        print(vl)
+        d=request.form["sl3_empname"]
+        x="select attribute.Attribute_id,attribute.Attribute_name,employee_attribute.Assign_id from attribute inner join employee_attribute on employee_attribute.Attribute_id=attribute.Attribute_id where employee_attribute.Employee_id='"+d+"'"
+        print(x)
+        c = conn()
+        v2 = c.selectall(x)
+        print(v2)
+        return render_template("ad_EAassign.html", data=v2,emp=ul,att=vl)
+@app.route('/delete_assign/<sid>')
+def assign(sid):
+    u = "delete from employee_attribute where Assign_id='" + sid + "'"
+    c = conn()
+    print(u)
+    ul = c.nonreturn(u)
+    return EA_assign()
+@app.route('/add_emp')
+def add_emp():
+
+    return render_template("ad_add_emp.html")
+@app.route('/add_empl',methods=["post"])
+def add_empl():
+    name=request.form["txt_name"]
+    email=request.form["txt_email"]
+    contact=request.form["txt_contact"]
+    house_name=request.form["txt_hname"]
+    post=request.form["txt_post"]
+    place=request.form["txt_place"]
+    district=request.form["sl_district"]
+    dob=request.form["txt_dob"]
+    gender=request.form["rd_gender"]
+    department=request.form["txt_department"]
+    image=request.files["fl_image"]
+    pswd=random.randint(00000000,99999999)
+    dt=str(datetime.datetime.now()).replace("-","_").replace(" ","_").replace(":","_")
+
+    c = conn()
+    qry="select * from employee where Email='"+email+"'"
+    r=c.selectone(qry)
+    if r is not None:
+        return render_template("ad_add_emp.html",status="no")
+    else:
+        image.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_img\\"+dt+".jpg")
+        path="/static/emp_img/"+dt+".jpg"
+        s="insert into employee(Name, Email, Contact,house_name,post,place,district,date_of_birth, Gender, Department,Image) VALUES ('"+name+"','"+email+"','"+contact+"','"+house_name+"','"+post+"','"+place+"','"+district+"','"+dob+"','"+gender+"','"+department+"','"+path+"')"
+        c.nonreturn(s)
+        l="insert into login(username,usertype,password) VALUES ('"+email+"','employee','"+str(pswd)+"')"
+        c=conn()
+        c.nonreturn(l)
+        import smtplib
+
+        s = smtplib.SMTP(host='smtp.gmail.com', port=587)
+        s.starttls()
+        s.login("attributebasedencryption@gmail.com", "attribute123")
+        msg = MIMEMultipart()  # create a message.........."
+        message = "Messege from CP-ABE"
+        msg['From'] = "attributebasedencryption@gmail.com"
+        msg['To'] = email
+        msg['Subject'] = "Your Password for CP-ABE Website"
+        body = "Your Password is:- - " + str(pswd)
+        msg.attach(MIMEText(body, 'plain'))
+        s.send_message(msg)
+        return home()
+@app.route('/view_emp')
+def view_emp():
+    v = "select * from employee"
+    c = conn()
+    v1 = c.selectall(v)
+    return render_template("ad_view_emp.html", data=v1)
+@app.route('/edit_emp/<sid>')
+def edit_emp(sid):
+    u = "select *from employee where Employee_id='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_edit_emp.html", data=u1)
+@app.route('/update_emp',methods=["post"])
+def update_emp():
+    employee_id=request.form["eid"]
+    name=request.form["txt_name"]
+    email=request.form["txt_email"]
+    contact=request.form["txt_contact"]
+    house_name = request.form["txt_hname"]
+    post = request.form["txt_post"]
+    place = request.form["txt_place"]
+    district = request.form["sl_district"]
+    dob=request.form["txt_dob"]
+    gender=request.form["rd_gender"]
+    department=request.form["txt_department"]
+    image = request.files["fl_image"]
+    pswd = random.randint(00000000, 99999999)
+    dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+    image.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_img\\" + dt + ".jpg")
+    path = "/static/emp_img/" + dt + ".jpg"
+    u="update employee set Name ='"+name+"',Email='"+email+"',Contact='"+contact+"',house_name='"+house_name+"',post='"+post+"',place='"+place+"',district='"+district+"',date_of_birth='"+dob+"',Gender='"+gender+"',Department='"+department+"',Image='"+path+"'where Employee_id='"+employee_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_emp()
+@app.route('/delete_emp/<sid>')
+def delete_emp(sid):
+    u="delete from employee where Employee_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_emp()
+@app.route('/file_upload')
+def file_upload():
+    return render_template("ad_fileupload.html")
+
+@app.route('/file_uploads',methods=["post"])
+def file_uploads():
+    file=request.files["fl_file"]
+    filename=request.form["txt_filename"]
+    kk=file.filename
+    ko=kk.split(".")
+    dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+    file.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + "."+ko[1])
+    session["filepath"]="C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + "."+ko[1]
+    path="/static/files/" + dt + "."+ko[1]
+    w="select max(File_id) from tbl_files"
+    c=conn()
+    d=c.mid(w)
+    session['File_id']=d
+    s="insert into tbl_files(File_name,Filepath,user_id,File_id) VALUES ('"+filename+"','"+path+"','0','"+str(d)+"')"
+    c = conn()
+    c.nonreturn(s)
+    return add_access()
+# @app.route('/file_uploads',methods=["post"])
+# def file_uploads():
+#     file=request.files["fl_file"]
+#     filename=request.form["txt_filename"]
+#
+#
+#
+#
+#     dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+#     file.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt")
+#
+#     path="/static/files/" + dt + ".jpg"
+#     import pyaes
+#
+#     # A 256 bit (32 byte) key
+#     key = "This_key_for_demo_purposes_only!"
+#     # plaintext = "Text may be any length you wish, no padding is required"
+#     file1 = open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt", "r+")
+#
+#     plaintext =  file1.read()
+#
+#     # key must be bytes, so we convert it
+#     key = key.encode('utf-8')
+#
+#     aes = pyaes.AESModeOfOperationCTR(key)
+#     ciphertext = aes.encrypt(plaintext)
+#
+#     # show the encrypted data
+#
+#
+#     file1 = open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt", "w")  # write mode
+#     file1.write(str(ciphertext))
+#     file1.close()
+#
+#
+#     # decryptn
+#
+#
+#     aes = pyaes.AESModeOfOperationCTR(key)
+#
+#     # decrypted data is always binary, need to decode to plaintext
+#     decrypted = aes.decrypt(ciphertext).decode('utf-8')
+#
+#     # True
+#
+#     print("plaintex",plaintext)
+#     print("cipher",ciphertext)
+#     print("decrypt",decrypted)
+#
+#
+#     w="select max(File_id) from tbl_files"
+#     c=conn()
+#     d=c.mid(w)
+#     session['File_id']=d
+#
+#
+#     s="insert into tbl_files(File_name,Filepath,user_id,File_id) VALUES ('"+filename+"','"+path+"','0','"+str(d)+"')"
+#     c = conn()
+#     c.nonreturn(s)
+#
+#
+#     # f = open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt", 'rb')
+#     # BLOCK_SIZE = 1024
+#     # m = Crypto.Hash.SHA256.new()
+#     # thisHash = ""
+#     # blocks = os.path.getsize('myfile') / BLOCK_SIZE  # ignore partial last block for now
+#     #
+#     # for i in range(blocks):
+#     #     b = f.read(BLOCK_SIZE)
+#     #     thisHash = m.update(b.encode())
+#     #     # f.seek(block_size, os.SEEK_CUR)
+#     #     x="select max(block_id) from blocks"
+#     #     c=conn()
+#     #     f=c.mid(x)
+#     #
+#     #     s="insert into blocks(block_id,file_id,hash_value) VALUES ('"+str(f)+"','"+str(d)+"','"+thisHash+"')"
+#     #     c=conn()
+#     #     c.nonreturn(s)
+#     return add_access()
+@app.route('/ad_viewuploads')
+def view_upload():
+    v = "select * from tbl_files where user_id=0"
+    c = conn()
+    v1 = c.selectall(v)
+    u="select File_id,File_name,Name,Department,Filepath from tbl_files inner join employee on employee.Employee_id=tbl_files.user_id "
+    c = conn()
+    u1 = c.selectall(u)
+    return render_template("ad_view_uploads.html", data=v1,odata=u1)
+@app.route("/download/<id>")
+def download_upload_file(id):
+    dd = "select key_hash,Filepath from tbl_files where File_id='" + str(id) + "'"
+    c = conn()
+    s = c.selectone(dd)
+    print(s)
+    pwd = s[0]
+    path=s[1]
+    print("path",path)
+
+    name1=path.split("/")
+    print("name1",name1)
+    name=name1[3]
+    print("name",name)
+
+    fnamees = "C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\download\\" + name + ".aes"
+    path = "C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\download\\" + name
+    exists = os.path.isfile(path)
+    if exists:
+        os.remove(path)
+    else:
+        print("ppp")
+    exist = os.path.isfile(fnamees)
+    if exist:
+        os.remove(fnamees)
+    else:
+        print("ppp")
+    qry = "select blockid from fileblocks where fileid='"+id+"' order by id asc"
+    c = conn()
+    res = c.selectall(qry)
+
+    f = bytearray()
+
+    for a in res:
+        with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + str(a[0]), "rb") as binary_file:
+            data = binary_file.read()
+
+            f = f + data
+    print(f,"hhhhhhhhhhh")
+
+    with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\download\\" + name,
+                    "wb") as mypicklefile:
+        # pickle.dump(f, mypicklefile)
+        mypicklefile.write(f)
+
+
+    os.rename(path, fnamees)
+
+
+    pyAesCrypt.decryptFile(fnamees, path, pwd, bufferSize)
+
+    return send_file(path, as_attachment=True)
+@app.route('/add_access')
+def add_access():
+    u="select Attribute_id,Attribute_name from attribute"
+    v="select Attribute_id,Attribute_name from attribute"
+
+    c = conn()
+    ul = c.selectall(u)
+    print(ul)
+    vl = c.selectall(v)
+    print(vl)
+    v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and tbl_files.File_id='"+str(session["File_id"])+"'"
+    c = conn()
+    v2 = c.selectall(v)
+    return render_template("ad_add_accessrule.html", att1=ul, att2=vl,data=v2)
+@app.route('/emp_viewuploads')
+def view_uploads():
+    v = "select File_id,File_name,Filepath from tbl_files where user_id='"+str(session['emp_id'])+"'"
+    c=conn()
+    myattr = []
+    myattr1 = []
+    res=c.selectall(v)
+    st = "select * from employee_attribute where Employee_id='"+str(session['emp_id'])+"'"
+    mi = c.selectall(st)
+    if mi is not None:
+        for i in mi:
+            myattr.append(i[2])
+            myattr1.append(i[2])
+    mfinal = []
+    for ii in range(len(myattr)):
+        for jj in range(len(myattr1)):
+            ja = str(myattr[ii]) + "A" + str(myattr1[jj])
+            jb = str(myattr[ii]) + "O" + str(myattr1[jj])
+            mfinal.append(ja)
+            mfinal.append(jb)
+    # print(mfinal,"mfnal")
+    fid = []
+    fname = []
+    desc = []
+    ss = "select File_id,File_name,Filepath from tbl_files where File_id not in (select File_id from tbl_files where user_id='"+str(session['emp_id'])+"')"
+    c = conn()
+    ress = c.selectall(ss)
+    print("ress",ress)
+    if ress is not None:
+
+        for i in ress:
+            mfinalfin = []
+            ko = []
+            s1 = "select distinct rule from file_rule where file_" \
+                 "id='" + str(i[0]) + "'"
+            fin = c.selectall(s1)
+            if fin is not None:
+                for j in fin:
+                    d = j[0].split(" ")
+                    w = d[0]
+                    x = d[2]
+                    if d[1] == "OR":
+                        ko.append(w)
+                        ko.append(x)
+                    else:
+                        mfinalfin.append(w + "A" + x)
+
+            # print("mfinalfin", mfinalfin)
+            count = 0
+            for j in range(len(mfinal)):
+                for k in range(len(mfinalfin)):
+                    if mfinal[j] == mfinalfin[k]:
+                        count = count + 1
+            ko = list(dict.fromkeys(ko))
+            # print(ko)
+            for j in range(len(ko)):
+                for k in range(len(myattr1)):
+                    if int(ko[j]) == myattr1[k]:
+                        count = count + 1
+
+            if count > 0:
+                fid.append(i[0])
+                fname.append(i[1])
+                desc.append(i[2])
+        return render_template("emp_view_uploads.html", data=res, cnt=len(fid), fid=fid, fname=fname, path=desc)
+    else:
+        return render_template("emp_view_uploads.html",data=res,cnt=0)
+@app.route('/add_accs',methods=["post"])
+def addaccess():
+    but=request.form["bt_save"]
+    if but == "SAVE":
+        attribute1=request.form["sl_attr1"]
+        operator=request.form["sl_condition"]
+        attribute2=request.form["sl_attr2"]
+        rule=str(attribute1)+" "+str(operator)+" "+str(attribute2)
+        f=session['File_id']
+        s="insert into file_rule(rule,file_id,attribute1,operator,attribute2) VALUES ('"+rule+"','"+str(f)+"','"+attribute1+"','"+operator+"','"+attribute2+"')"
+        c = conn()
+        c.nonreturn(s)
+        u = "select Attribute_id,Attribute_name from attribute"
+        v = "select Attribute_id,Attribute_name from attribute"
+
+        c = conn()
+        ul = c.selectall(u)
+        print(ul)
+        vl = c.selectall(v)
+        print(vl)
+        v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and tbl_files.File_id='" + str(session["File_id"]) + "'"
+        c = conn()
+        v2 = c.selectall(v)
+        return render_template("ad_add_accessrule.html", att1=ul, att2=vl, data=v2)
+    else:
+        c = conn()
+
+        filepath = str(session["filepath"])
+        fid = str(session["File_id"])
+        s = "select * from file_rule where file_id='" + fid + "'"
+        ff = c.selectall(s)
+        mystring = ""
+        if ff is not None:
+            for i in ff:
+                k1 = str(i[1])
+                k2 = k1.split(" ")
+                if k2[1] == "AND":
+                    k3 = "A"
+                else:
+                    k3 = "O"
+                if mystring != "":
+                    mystring = mystring + k2[0] + k3 + k2[2] + "A"
+                else:
+                    mystring = k2[0] + k3 + k2[2] + "A"
+        print("mystring", mystring)
+
+        import hashlib
+
+        hash_object = hashlib.md5(mystring.encode())
+        k = hash_object.hexdigest()
+        print(k)
+        qry = "update tbl_files set key_hash='" + str(k) + "' where File_id='" + str(session["File_id"]) + "'"
+        print(qry)
+        c = conn()
+        c.nonreturn(qry)
+        pyAesCrypt.encryptFile(filepath, filepath + ".aes", k, bufferSize)
+        with open(filepath + ".aes", "rb")as image:
+
+            f = image.read()
+            b = bytearray(f)
+        c = conn()
+        blocksize = 10000
+        totalblocks = int(len(b) / blocksize)
+        for n in range(0, totalblocks):
+            blocksingle = bytearray([b[i] for i in range(n * blocksize, (n * blocksize) + blocksize)])
+            result = hashlib.sha256(blocksingle)
+            hashval = result.hexdigest()
+            qry = "select block_id from blocks where hash_value='" + hashval + "'"
+            rf = c.selectone(qry)
+            blckid = ""
+            if rf is not None:
+                blckid = str(rf[0])
+            else:
+                sq = "select max(block_id) from blocks"
+                blckid = str(c.mid(sq))
+                qry = "INSERT INTO blocks (hash_value) VALUES ('" + hashval + "')"
+                str(c.nonreturn(qry))
+
+                with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + blckid,
+                          "wb") as mypicklefile:
+                    # pickle.dump(blocksingle, mypicklefile)
+
+                    mypicklefile.write(blocksingle)
+
+            qry = "INSERT INTO `fileblocks`(`fileid`,`blockid`) VALUES (" + str(fid) + "," + blckid + ")"
+            c.nonreturn(qry)
+
+        if totalblocks * blocksize < len(b):
+            blocksingle = bytearray([b[i] for i in range(totalblocks * blocksize, len(b))])
+            result = hashlib.sha256(blocksingle)
+            hashval = result.hexdigest()
+            qry = "select block_id from blocks where hash_value='" + hashval + "'"
+            rf = c.selectone(qry)
+            blckid = ""
+            if rf is not None:
+                blckid = str(rf[0])
+            else:
+                sq = "select max(block_id) from blocks"
+                blckid = str(c.mid(sq))
+                qry = "INSERT INTO blocks (hash_value) VALUES ('" + hashval + "')"
+                str(c.nonreturn(qry))
+
+
+                with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + blckid,
+                          "wb") as mypicklefile:
+                    mypicklefile.write(blocksingle)
+            qry = "INSERT INTO `fileblocks`(`fileid`,`blockid`) VALUES (" + str(fid) + "," + blckid + ")"
+            c.nonreturn(qry)
+
+        return home()
+@app.route('/add_attribute')
+def add_attribute():
+
+    u = "select Attribute_id,Attribute_name from attribute"
+    v = "select Attribute_id,Attribute_name from attribute"
+
+    c = conn()
+    ul = c.selectall(u)
+    print(ul)
+    vl = c.selectall(v)
+    print(vl)
+    v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and file_rule.file_id='"+str(session["File_id"])+"'"
+    c = conn()
+    v2 = c.selectall(v)
+    return render_template("emp_add_accessrule.html", att1=ul, att2=vl,data=v2)
+
+
+@app.route('/add_attribute',methods=["post"])
+def add_attr():
+    but = request.form["bt_save"]
+    if but == "SAVE":
+        attribute1=request.form["sl_attr1"]
+        operator=request.form["sl_condition"]
+        attribute2=request.form["sl_attr2"]
+        rule=str(attribute1)+" "+str(operator)+" "+str(attribute2)
+        f=session['File_id']
+        s="insert into file_rule(rule,file_id,attribute1,operator,attribute2) VALUES ('"+rule+"','"+str(f)+"','"+attribute1+"','"+operator+"','"+attribute2+"')"
+
+        c = conn()
+        c.nonreturn(s)
+        u = "select Attribute_id,Attribute_name from attribute"
+        v = "select Attribute_id,Attribute_name from attribute"
+
+        c = conn()
+        ul = c.selectall(u)
+        print(ul)
+        vl = c.selectall(v)
+        print(vl)
+        v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and tbl_files.File_id='" + str(
+            session["File_id"]) + "'"
+        c = conn()
+        v2 = c.selectall(v)
+        return render_template("emp_add_accessrule.html", att1=ul, att2=vl, data=v2)
+    else:
+        c = conn()
+
+        filepath = str(session["filepath"])
+        fid = str(session["File_id"])
+        s = "select * from file_rule where file_id='" + fid + "'"
+        ff = c.selectall(s)
+        mystring = ""
+        if ff is not None:
+            for i in ff:
+                k1 = str(i[1])
+                k2 = k1.split(" ")
+                if k2[1] == "AND":
+                    k3 = "A"
+                else:
+                    k3 = "O"
+                if mystring != "":
+                    mystring = mystring + k2[0] + k3 + k2[2] + "A"
+                else:
+                    mystring = k2[0] + k3 + k2[2] + "A"
+        print("mystring", mystring)
+
+        import hashlib
+
+        hash_object = hashlib.md5(mystring.encode())
+        k = hash_object.hexdigest()
+        print(k)
+        qry = "update tbl_files set key_hash='" + str(k) + "' where File_id='" + str(session["File_id"]) + "'"
+        print(qry)
+        c = conn()
+        c.nonreturn(qry)
+        pyAesCrypt.encryptFile(filepath, filepath + ".aes", k, bufferSize)
+        with open(filepath + ".aes", "rb")as image:
+
+            f = image.read()
+            b = bytearray(f)
+        c = conn()
+        blocksize = 10000
+        totalblocks = int(len(b) / blocksize)
+        for n in range(0, totalblocks):
+            blocksingle = bytearray([b[i] for i in range(n * blocksize, (n * blocksize) + blocksize)])
+            result = hashlib.sha256(blocksingle)
+            hashval = result.hexdigest()
+            qry = "select block_id from blocks where hash_value='" + hashval + "'"
+            rf = c.selectone(qry)
+            blckid = ""
+            if rf is not None:
+                blckid = str(rf[0])
+            else:
+                sq = "select max(block_id) from blocks"
+                blckid = str(c.mid(sq))
+                qry = "INSERT INTO blocks (hash_value) VALUES ('" + hashval + "')"
+                str(c.nonreturn(qry))
+
+                with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + blckid,
+                          "wb") as mypicklefile:
+                    # pickle.dump(blocksingle, mypicklefile)
+
+                    mypicklefile.write(blocksingle)
+
+            qry = "INSERT INTO `fileblocks`(`fileid`,`blockid`) VALUES (" + str(fid) + "," + blckid + ")"
+            c.nonreturn(qry)
+
+        if totalblocks * blocksize < len(b):
+            blocksingle = bytearray([b[i] for i in range(totalblocks * blocksize, len(b))])
+            result = hashlib.sha256(blocksingle)
+            hashval = result.hexdigest()
+            qry = "select block_id from blocks where hash_value='" + hashval + "'"
+            rf = c.selectone(qry)
+            blckid = ""
+            if rf is not None:
+                blckid = str(rf[0])
+            else:
+                sq = "select max(block_id) from blocks"
+                blckid = str(c.mid(sq))
+                qry = "INSERT INTO blocks (hash_value) VALUES ('" + hashval + "')"
+                str(c.nonreturn(qry))
+
+                with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + blckid,
+                          "wb") as mypicklefile:
+                    mypicklefile.write(blocksingle)
+            qry = "INSERT INTO `fileblocks`(`fileid`,`blockid`) VALUES (" + str(fid) + "," + blckid + ")"
+            c.nonreturn(qry)
+
+        return ehome()
+
+
+
+
+@app.route('/view_rule')
+def view_rule():
+    v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id"
+    c = conn()
+    v1 = c.selectall(v)
+    return render_template("ad_rule_view.html", data=v1)
+@app.route('/delete_rule/<sid>')
+def delete_rule(sid):
+    u="delete from file_rule where rule_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return add_access()
+@app.route('/eview_rule')
+def eview_rule():
+    v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id"
+    c = conn()
+    v1 = c.selectall(v)
+    return render_template("emp_view_rule.html", data=v1)
+
+
+@app.route('/delete_rul/<sid>')
+def delete_rul(sid):
+    u="delete from file_rule where rule_id='"+sid+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return add_attribute()
+
+
+
+
+
+@app.route('/')
+def login():
+    return render_template("login.html")
+@app.route('/logins',methods=["post"])
+def logins():
+    username=request.form["txt_usrname"]
+    password=request.form["txt_password"]
+    u="select * from login where Username='"+username+"' and Password='"+password+"'"
+    c = conn()
+    v1 = c.selectone(u)
+    if v1 is None:
+        return ("<script>alert('YOU ARE NOT REGISTERED!')window.location='/'</script>")
+    else:
+        if v1[2]=="admin":
+            return render_template("ad_home.html")
+        else:
+            v="select * from employee where Email='"+username+"'"
+            c=conn()
+            u1=c.selectone(v)
+            session['emp_id']=u1[0]
+            return render_template("emp_home.html")
+@app.route('/emp_home')
+def ehome():
+    return render_template("emp_home.html")
+@app.route('/emp_fileupload')
+def emp_fileupload():
+    return render_template("emp_fileupload.html")
+@app.route('/emp_fileuploads',methods=["post"])
+def emp_fileuploads():
+    file=request.files["fl_file2"]
+    filename=request.form["txt_filename2"]
+    kk = file.filename
+    ko = kk.split(".")
+
+
+    dt = str(datetime.datetime.now()).replace("-", "_").replace(" ", "_").replace(":", "_")
+    file.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_files\\"+ dt +"."+ko[1])
+    session["filepath"] = "C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_files\\" + dt + "." + ko[1]
+    path="/static/emp_file/" + dt + "."+ko[1]
+
+    w = "select max(File_id) from tbl_files"
+    c = conn()
+    d = c.mid(w)
+    session['File_id'] = d
+
+    s="insert into tbl_files(File_name,Filepath,user_id,File_id) VALUES ('"+filename+"','"+path+"','"+str(session['emp_id'])+"','"+str(d)+"')"
+    c = conn()
+    c.nonreturn(s)
+
+    return add_attribute()
+@app.route('/send_complaint')
+def send_complaint():
+    return render_template("emp_complaint.html")
+@app.route('/complaints',methods=["post"])
+def complaints():
+    complaint=request.form["txt_complaint"]
+    u="insert into complaint(Employee_id,Complaint,C_date,Status) values('"+str(session['emp_id'])+"','"+complaint+"',CURDATE(),'pending')"
+    c = conn()
+    c.nonreturn(u)
+    return ehome()
+@app.route('/view_reply')
+def view_reply():
+    v="select * from complaint WHERE Employee_id='"+str(session['emp_id'])+"'"
+    c =conn()
+    v1 = c.selectall(v)
+    return render_template("emp_view_reply.html",data=v1)
+@app.route('/add_feedback')
+def add_feed():
+    return render_template("emp_feedback.html")
+@app.route('/feedback',methods=["post"])
+def feed():
+    feedback=request.form["txtarea_add"]
+    u="insert into feedback(employee_id,feedback,F_date)values ('"+str(session['emp_id'])+"','"+feedback+"',CURDATE())"
+    c = conn()
+    c.nonreturn(u)
+    return ehome()
+@app.route('/e_logout')
+def logout():
+    return render_temphdhfggnlate("login.html")
+@app.route('/emp')
+def emp():
+    return render_template("emp_temp.html")
+@app.route('/admin')
+def admin():
+    return render_template("admin_temp.html")
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True,port=3308)

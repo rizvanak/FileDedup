@@ -1,0 +1,67 @@
+ # plaintext = "Text may be any length you wish, no padding is required"
+#     file1 = open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt", "r+")
+#
+#     plaintext =  file1.read()
+#
+#     # key must be bytes, so we convert it
+#     key = key.encode('utf-8')
+#
+#     aes = pyaes.AESModeOfOperationCTR(key)
+#     ciphertext = aes.encrypt(plaintext)
+#
+#     # show the encrypted data
+#
+#
+#     file1 = open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt", "w")  # write mode
+#     file1.write(str(ciphertext))
+#     file1.close()
+#
+#
+#     # decryptn
+#
+#
+#     aes = pyaes.AESModeOfOperationCTR(key)
+#
+#     # decrypted data is always binary, need to decode to plaintext
+#     decrypted = aes.decrypt(ciphertext).decode('utf-8')
+#
+#     # True
+#
+#     print("plaintex",plaintext)
+#     print("cipher",ciphertext)
+#     print("decrypt",decrypted)
+#
+#
+#     w="select max(File_id) from tbl_files"
+#     c=conn()
+#     d=c.mid(w)
+#     session['File_id']=d
+#
+#
+#     s="insert into tbl_files(File_name,Filepath,user_id,File_id) VALUES ('"+filename+"','"+path+"','0','"+str(d)+"')"
+#     c = conn()
+#     c.nonreturn(s)
+#
+#
+#     # f = open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\files\\" + dt + ".txt", 'rb')
+#     # BLOCK_SIZE = 1024
+#     # m = Crypto.Hash.SHA256.new()
+#     # thisHash = ""
+#     # blocks = os.path.getsize('myfile') / BLOCK_SIZE  # ignore partial last block for now
+#     #
+#     # for i in range(blocks):
+#     #     b = f.read(BLOCK_SIZE)
+#     #     thisHash = m.update(b.encode())
+#     #     # f.seek(block_size, os.SEEK_CUR)
+#     #     x="select max(block_id) from blocks"
+#     #     c=conn()
+#     #     f=c.mid(x)
+#     #
+#     #     s="insert into blocks(block_id,file_id,hash_value) VALUES ('"+str(f)+"','"+str(d)+"','"+thisHash+"')"
+#     #     c=conn()
+#     #     c.nonreturn(s)
+#     return add_access()
+@app.route('/ad_viewuploads')
+def view_upload():
+    v = "select * from tbl_files where user_id=0"
+  

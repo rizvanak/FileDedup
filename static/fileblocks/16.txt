@@ -1,0 +1,47 @@
+ute('/send_complaint')
+def send_complaint():
+    return render_template("emp_complaint.html")
+@app.route('/complaints',methods=["post"])
+def complaints():
+    complaint=request.form["txt_complaint"]
+    u="insert into complaint(Employee_id,Complaint,C_date,Status) values('"+str(session['emp_id'])+"','"+complaint+"',CURDATE(),'pending')"
+    c = conn()
+    c.nonreturn(u)
+    return ehome()
+@app.route('/view_reply')
+def view_reply():
+    v="select * from complaint WHERE Employee_id='"+str(session['emp_id'])+"'"
+    c =conn()
+    v1 = c.selectall(v)
+    return render_template("emp_view_reply.html",data=v1)
+@app.route('/add_feedback')
+def add_feed():
+    return render_template("emp_feedback.html")
+@app.route('/feedback',methods=["post"])
+def feed():
+    feedback=request.form["txtarea_add"]
+    u="insert into feedback(employee_id,feedback,F_date)values ('"+str(session['emp_id'])+"','"+feedback+"',CURDATE())"
+    c = conn()
+    c.nonreturn(u)
+    return ehome()
+@app.route('/e_logout')
+def logout():
+    return render_temphdhfggnlate("login.html")
+@app.route('/emp')
+def emp():
+    return render_template("emp_temp.html")
+@app.route('/admin')
+def admin():
+    return render_template("admin_temp.html")
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True,port=3308)

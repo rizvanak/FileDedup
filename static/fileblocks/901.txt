@@ -1,0 +1,14 @@
+ with open("C:\\Users\\Aswathi\\PycharmProjects\\myprct\\static\\uploads\\"+filename, 'rb') as f:
+            pdf = PdfFileReader(f)
+
+            a=len(pdf.pages)
+            print(a)
+            nlp = spacy.load("en_core_web_sm")
+
+            for i in range(0,a):
+                page = pdf.getPage(i)
+                text = page.extractText()
+                print(text)
+
+
+            

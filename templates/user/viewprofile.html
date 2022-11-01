@@ -1,0 +1,50 @@
+{% extends "user/newtemp.html" %}
+{% block body %}
+
+
+{#<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">#}
+{#<html xmlns="http://www.w3.org/1999/xhtml">#}
+{#<head>#}
+{#<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />#}
+{#<title>Untitled Document</title>#}
+{#</head>#}
+{##}
+{#<body>#}
+<form id="form1" name="form1" method="post" action="/updateprofile">
+  <table class="table table-bordered">
+    <tr>
+        <input type="hidden" value="{{ data['sign_id'] }}" name="hid">
+      <td>Name</td>
+      <td>
+      <input type="text" class="form-control" name="textfield" id="textfield" value="{{ data['Name'] }}" required /></td>
+    </tr>
+    <tr>
+      <td>DOB</td>
+      <td>
+      <input type="date" class="form-control" name="textfield2" id="textfield2" value="{{ data['Dob'] }}" required /></td>
+    </tr>
+    <tr>
+      <td>gender</td>
+      <td>
+      <input type="radio" name="textfield3" {% if data['gender']=='male' %} checked="checked" {% endif %}  id="textfield3" value="male"/>Male
+            <input type="radio" name="textfield3" {% if data['gender']=='female' %} checked="checked" {% endif %}  id="textfield3" value="female"/>Female
+      </td>
+    </tr>
+    <tr>
+      <td>phoneno</td>
+      <td>
+      <input type="text" name="textfield4" pattern="[9876][0-9]{9}" class="form-control" id="textfield4" required value="{{ data['phone_no'] }}"/></td>
+    </tr>
+    <tr>
+      <td>Email</td>
+      <td>
+      <input type="email" readonly name="textfield5" class="form-control" id="textfield5" value="{{ data['email'] }}" /></td>
+    </tr>
+  <tr><td colspan="2" align="center">
+      <input type="submit" class="btn btn-success" value="update"></td>
+  </tr>
+  </table>
+</form>
+{#</body>#}
+{#</html>#}
+{% endblock %}

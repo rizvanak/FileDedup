@@ -1,0 +1,13 @@
+cmp(sid):
+    u = "select * from complaint where Complaint_id ='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_reply.html.", data=u1)
+@app.route('/update_reply',methods=["post"])
+def update_reply():
+    complaint_id=request.form["rid"]
+    reply=request.form["txtarea_reply"]
+    u="update complaint set Reply='"+reply+"',status='done' where Complaint_id='"+complaint_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_complaint()

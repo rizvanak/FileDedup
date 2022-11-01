@@ -1,0 +1,47 @@
+cks (hash_value) VALUES ('" + hashval + "')"
+                str(c.nonreturn(qry))
+
+                with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + blckid,
+                          "wb") as mypicklefile:
+                    # pickle.dump(blocksingle, mypicklefile)
+
+                    mypicklefile.write(blocksingle)
+
+            qry = "INSERT INTO `fileblocks`(`fileid`,`blockid`) VALUES (" + str(fid) + "," + blckid + ")"
+            c.nonreturn(qry)
+
+        if totalblocks * blocksize < len(b):
+            blocksingle = bytearray([b[i] for i in range(totalblocks * blocksize, len(b))])
+            result = hashlib.sha256(blocksingle)
+            hashval = result.hexdigest()
+            qry = "select block_id from blocks where hash_value='" + hashval + "'"
+            rf = c.selectone(qry)
+            blckid = ""
+            if rf is not None:
+                blckid = str(rf[0])
+            else:
+                sq = "select max(block_id) from blocks"
+                blckid = str(c.mid(sq))
+                qry = "INSERT INTO blocks (hash_value) VALUES ('" + hashval + "')"
+                str(c.nonreturn(qry))
+
+
+                with open("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\fileblocks\\" + blckid,
+                          "wb") as mypicklefile:
+                    mypicklefile.write(blocksingle)
+            qry = "INSERT INTO `fileblocks`(`fileid`,`blockid`) VALUES (" + str(fid) + "," + blckid + ")"
+            c.nonreturn(qry)
+
+        return home()
+@app.route('/add_attribute')
+def add_attribute():
+
+    u = "select Attribute_id,Attribute_name from attribute"
+    v = "select Attribute_id,Attribute_name from attribute"
+
+    c = conn()
+    ul = c.selectall(u)
+    print(ul)
+    vl = c.selectall(v)
+    print(vl)
+    v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule

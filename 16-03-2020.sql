@@ -1,0 +1,1 @@
+update signup set Name='',Dob='',gender='',phone_no='' where sign_id=''

@@ -1,0 +1,47 @@
+.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and file_rule.file_id='"+str(session["File_id"])+"'"
+    c = conn()
+    v2 = c.selectall(v)
+    return render_template("emp_add_accessrule.html", att1=ul, att2=vl,data=v2)
+
+
+@app.route('/add_attribute',methods=["post"])
+def add_attr():
+    but = request.form["bt_save"]
+    if but == "SAVE":
+        attribute1=request.form["sl_attr1"]
+        operator=request.form["sl_condition"]
+        attribute2=request.form["sl_attr2"]
+        rule=str(attribute1)+" "+str(operator)+" "+str(attribute2)
+        f=session['File_id']
+        s="insert into file_rule(rule,file_id,attribute1,operator,attribute2) VALUES ('"+rule+"','"+str(f)+"','"+attribute1+"','"+operator+"','"+attribute2+"')"
+
+        c = conn()
+        c.nonreturn(s)
+        u = "select Attribute_id,Attribute_name from attribute"
+        v = "select Attribute_id,Attribute_name from attribute"
+
+        c = conn()
+        ul = c.selectall(u)
+        print(ul)
+        vl = c.selectall(v)
+        print(vl)
+        v = "select file_rule.rule_id,attr1.Attribute_name as attribute1,file_rule.operator,attr2.Attribute_name as attribute2,tbl_files.File_name from attribute as attr1,file_rule,attribute as attr2,tbl_files where attr1.Attribute_id=file_rule.attribute1 and attr2.Attribute_id=file_rule.attribute2 and tbl_files.File_id=file_rule.file_id and tbl_files.File_id='" + str(
+            session["File_id"]) + "'"
+        c = conn()
+        v2 = c.selectall(v)
+        return render_template("emp_add_accessrule.html", att1=ul, att2=vl, data=v2)
+    else:
+        c = conn()
+
+        filepath = str(session["filepath"])
+        fid = str(session["File_id"])
+        s = "select * from file_rule where file_id='" + fid + "'"
+        ff = c.selectall(s)
+        mystring = ""
+        if ff is not None:
+            for i in ff:
+                k1 = str(i[1])
+                k2 = k1.split(" ")
+                if k2[1] == "AND":
+                    k3 = "A"
+    

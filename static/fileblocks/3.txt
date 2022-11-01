@@ -1,0 +1,56 @@
+ibute_name+"')"
+            c = conn()
+            c.nonreturn(s)
+            return home()
+    else:
+        u = "select Employee_id,Name from employee"
+        v = "select Attribute_id,Attribute_name from attribute"
+
+        c = conn()
+        ul = c.selectall(u)
+        print(ul)
+        vl = c.selectall(v)
+        print(vl)
+        d=request.form["sl3_empname"]
+        x="select attribute.Attribute_id,attribute.Attribute_name,employee_attribute.Assign_id from attribute inner join employee_attribute on employee_attribute.Attribute_id=attribute.Attribute_id where employee_attribute.Employee_id='"+d+"'"
+        print(x)
+        c = conn()
+        v2 = c.selectall(x)
+        print(v2)
+        return render_template("ad_EAassign.html", data=v2,emp=ul,att=vl)
+@app.route('/delete_assign/<sid>')
+def assign(sid):
+    u = "delete from employee_attribute where Assign_id='" + sid + "'"
+    c = conn()
+    print(u)
+    ul = c.nonreturn(u)
+    return EA_assign()
+@app.route('/add_emp')
+def add_emp():
+
+    return render_template("ad_add_emp.html")
+@app.route('/add_empl',methods=["post"])
+def add_empl():
+    name=request.form["txt_name"]
+    email=request.form["txt_email"]
+    contact=request.form["txt_contact"]
+    house_name=request.form["txt_hname"]
+    post=request.form["txt_post"]
+    place=request.form["txt_place"]
+    district=request.form["sl_district"]
+    dob=request.form["txt_dob"]
+    gender=request.form["rd_gender"]
+    department=request.form["txt_department"]
+    image=request.files["fl_image"]
+    pswd=random.randint(00000000,99999999)
+    dt=str(datetime.datetime.now()).replace("-","_").replace(" ","_").replace(":","_")
+
+    c = conn()
+    qry="select * from employee where Email='"+email+"'"
+    r=c.selectone(qry)
+    if r is not None:
+        return render_template("ad_add_emp.html",status="no")
+    else:
+        image.save("C:\\Users\\jnh\\PycharmProjects\\CP-ABE\\static\\emp_img\\"+dt+".jpg")
+        path="/static/emp_img/"+dt+".jpg"
+        s="insert into employee(Nam

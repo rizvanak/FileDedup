@@ -1,0 +1,59 @@
+cmp(sid):
+    u = "select * from complaint where Complaint_id ='" + sid + "'"
+    c = conn()
+    u1 = c.selectone(u)
+    return render_template("ad_reply.html.", data=u1)
+@app.route('/update_reply',methods=["post"])
+def update_reply():
+    complaint_id=request.form["rid"]
+    reply=request.form["txtarea_reply"]
+    u="update complaint set Reply='"+reply+"',status='done' where Complaint_id='"+complaint_id+"'"
+    c=conn()
+    ul=c.nonreturn(u)
+    return view_complaint()
+
+
+@app.route('/EA_remove')
+def EA_remove():
+    return render_template("ad_EA remove.html")
+@app.route('/view_EA')
+def view_EA():
+    v="select employee_attribute.Assign_id,employee.Name,attribute.Attribute_name from employee_attribute inner join employee on employee.Employee_id=employee_attribute.Employee_id inner join attribute on attribute.Attribute_id=employee_attribute.Attribute_id"
+    c = conn()
+    v1 = c.selectall(v)
+    return render_template("ad_EA remove.html", data=v1)
+@app.route('/delete_EA/<sid>')
+def del_EA(sid):
+    u = "delete from employee_attribute where Assign_id='" + sid + "'"
+    c = conn()
+    ul = c.nonreturn(u)
+    return view_EA()
+
+
+
+@app.route('/EA_assign')
+def EA_assign():
+    u = "select Employee_id,Name from employee"
+    v = "select Attribute_id,Attribute_name from attribute"
+
+    c = conn()
+    ul = c.selectall(u)
+    print(ul)
+    vl = c.selectall(v)
+    print(vl)
+    return render_template("ad_EAassign.html",emp=ul,att=vl)
+@app.route('/EA_assigns',methods=["post"])
+def EA_assigns():
+    bt=request.form['button']
+    if bt =="Save":
+        employee_name=request.form["sl_empname"]
+        attribute_name=request.form["sl_attributename"]
+
+        d="select * from employee_attribute WHERE Employee_id='"+employee_name+"' AND Attribute_id='"+attribute_name+"'"
+        c=conn()
+        v=c.selectone(d)
+        if v is not None:
+            return EA_assign()
+
+        else:
+            s="insert into employee_attribute(Employee_id,Attribute_id) VALUES ('"+employee_name+"','"+attr
